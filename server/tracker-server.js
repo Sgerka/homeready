@@ -17,7 +17,7 @@ exports.handler = async (event) => {
 
         return await webflowAPI.setCollectionItem(activitiesCollectionId, {
             'name': '05',
-            'slug': '05',
+            'slug': '0005',
             '_archived': false,
             '_draft': false,
             'buyer': '60bf30547e21d36d22945c6e',
