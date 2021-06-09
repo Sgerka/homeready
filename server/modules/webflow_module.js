@@ -5,6 +5,7 @@ const Webflow = require('webflow-api');
 const webflowClient = new Webflow({token: token});
 
 module.exports = {
+
     getInfo: async () => {
         return webflowClient.info();
     },
@@ -28,8 +29,15 @@ module.exports = {
             fields: item
         }, {live: true});
         return newItem;
+    },
+
+    updateCollectionItem: async (collectionId, itemId, fields) => {
+        const updatedItem = await webflowClient.updateItem({
+            collectionId: collectionId,
+            itemId: itemId,
+            fields: fields
+        }, {live: true});
+        return updatedItem;
     }
 
 };
-
-
