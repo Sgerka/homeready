@@ -30,17 +30,12 @@ exports.handler = async (event) => {
 
         let projectToAdd = projectsItems.items.filter(item => item.address.includes(dataFromRequest.Project))[0]._id;
         let sellerToAdd = sellersItems.items.filter(item => item.slug.includes(dataFromRequest.seller))[0]._id;
-        let existingBuyer = buyersItems.items.filter(item => item['phone-number'] === dataFromRequest.Phone)[0];
+        let existingBuyerOfThisSeller = buyersItems.items.filter(item => item['phone-number'] === dataFromRequest.Phone && item['sellers2'] === sellerToAdd)[0];
 
-        if (existingBuyer) {
+        if (existingBuyerOfThisSeller) {
             if (!existingBuyer.projects.includes(projectToAdd)) {
                 existingBuyer.projects.push(projectToAdd);
                 projectToAdd = existingBuyer.projects;
-            }
-
-            if (!existingBuyer.sellers.includes(sellerToAdd)) {
-                existingBuyer.sellers.push(sellerToAdd);
-                sellerToAdd = existingBuyer.sellers;
             }
 
             return await webflowAPI.updateCollectionItem(buyersCollectionId, existingBuyer['_id'], {
@@ -50,7 +45,7 @@ exports.handler = async (event) => {
                 '_draft': false,
                 'phone-number': dataFromRequest.Phone,
                 'projects': projectToAdd,
-                'sellers': sellerToAdd
+                'sellers2': sellerToAdd
             });
 
         } else {
@@ -60,7 +55,7 @@ exports.handler = async (event) => {
                 '_draft': false,
                 'phone-number': dataFromRequest.Phone,
                 'projects': [projectToAdd],
-                'sellers': [sellerToAdd]
+                'sellers2': sellerToAdd
             });
 
         }
@@ -90,3 +85,4 @@ exports.handler = async (event) => {
 
 
 // @TODO: We need to generate link and save it in DB somehow. And error handling.
+// @TODO: Add a field to buyers with json {'project': 'link'}
