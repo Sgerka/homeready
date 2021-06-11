@@ -114,8 +114,8 @@ exports.handler = async (event) => {
     let error = '';
 
     try {
-        updateBuyer = await updateBuyerData();
         try {
+            updateBuyer = await updateBuyerData();
             link = await addNewLink(updateBuyer);
         } catch (er) {
             error = error + er;
