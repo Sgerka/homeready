@@ -15,6 +15,7 @@ exports.handler = async (event) => {
 
     let updateBuyerData = async () => {
         let buyersCollectionId, sellersCollectionId, projectsCollectionId, buyersItems, sellersItems, projectsItems;
+        let buyerData = {};
 
         await Promise.all([webflowAPI.getCollectionIdByName('Buyers'), webflowAPI.getCollectionIdByName('Sellers'), webflowAPI.getCollectionIdByName('Projects')]).then(async (collections) => {
             buyersCollectionId = collections[0][0]['_id'];
@@ -28,28 +29,45 @@ exports.handler = async (event) => {
         });
 
 
-        let projectToAdd = projectsItems.items.filter(item => item.address.includes(dataFromRequest.Project))[0]._id;
+        let projectToAdd = projectsItems.items.filter(item => item.slug.includes(dataFromRequest.Project))[0]._id;
+        let projectToAddSlug = dataFromRequest.Project;
         let sellerToAdd = sellersItems.items.filter(item => item.slug.includes(dataFromRequest.seller))[0]._id;
         let existingBuyerOfThisSeller = buyersItems.items.filter(item => item['phone-number'] === dataFromRequest.Phone && item['sellers2'] === sellerToAdd)[0];
+        let updateCollectionItemRequest = null;
 
         if (existingBuyerOfThisSeller) {
-            if (!existingBuyer.projects.includes(projectToAdd)) {
-                existingBuyer.projects.push(projectToAdd);
-                projectToAdd = existingBuyer.projects;
+            if (!existingBuyerOfThisSeller.projects.includes(projectToAdd)) {
+                let newProject = projectToAdd;
+                existingBuyerOfThisSeller.projects.push(projectToAdd);
+                projectToAdd = existingBuyerOfThisSeller.projects;
+                updateCollectionItemRequest = await webflowAPI.updateCollectionItem(buyersCollectionId, existingBuyerOfThisSeller['_id'], {
+                    'name': dataFromRequest.name,
+                    'slug': existingBuyerOfThisSeller.slug,
+                    '_archived': false,
+                    '_draft': false,
+                    'phone-number': dataFromRequest.Phone,
+                    'projects': projectToAdd,
+                    'sellers2': sellerToAdd
+                });
+
+                buyerData = {
+                    'buyerId': updateCollectionItemRequest._id,
+                    'sellerId': updateCollectionItemRequest.sellers2,
+                    'projectId': newProject,
+                    'projectSlug': projectToAddSlug
+                };
+
+            } else {
+                buyerData = {
+                    'buyerId': existingBuyerOfThisSeller._id,
+                    'sellerId': existingBuyerOfThisSeller.sellers2,
+                    'projectId': projectToAdd,
+                    'projectSlug': projectToAddSlug
+                };
             }
 
-            return await webflowAPI.updateCollectionItem(buyersCollectionId, existingBuyer['_id'], {
-                'name': dataFromRequest.name,
-                'slug': existingBuyer.slug,
-                '_archived': false,
-                '_draft': false,
-                'phone-number': dataFromRequest.Phone,
-                'projects': projectToAdd,
-                'sellers2': sellerToAdd
-            });
-
         } else {
-            return await webflowAPI.setCollectionItem(buyersCollectionId, {
+            updateCollectionItemRequest = await webflowAPI.setCollectionItem(buyersCollectionId, {
                 'name': dataFromRequest.name,
                 '_archived': false,
                 '_draft': false,
@@ -57,32 +75,64 @@ exports.handler = async (event) => {
                 'projects': [projectToAdd],
                 'sellers2': sellerToAdd
             });
+            buyerData = {
+                'buyerId': updateCollectionItemRequest._id,
+                'sellerId': updateCollectionItemRequest.sellers2,
+                'projectId': projectToAdd,
+                'projectSlug': projectToAddSlug
+            };
+        }
+        return buyerData;
+    };
 
+    let addNewLink = async (data) => {
+        let linksCollection = await webflowAPI.getCollectionIdByName('Links');
+        let linksCollectionId = linksCollection[0]['_id'];
+        let linksItems = await webflowAPI.getCollectionItems(linksCollectionId);
+        let linksMatchingRequest = linksItems.items.filter(item => item.seller === data.sellerId && item.project === data.projectId && item.buyer === data.buyerId);
+
+        if (linksMatchingRequest.length > 0) {
+            return linksMatchingRequest[0].link;
+        } else {
+            let generateLink = Math.round(Math.random() * 10000000);
+            let updateCollectionItemRequest = await webflowAPI.setCollectionItem(linksCollectionId, {
+                'name': generateLink.toString(),
+                '_archived': false,
+                '_draft': false,
+                'buyer': data.buyerId,
+                'seller': data.sellerId,
+                'project': data.projectId,
+                'link': `http://homeready.co.il?/${data.projectSlug}/?p=${generateLink}`
+            });
+
+            return updateCollectionItemRequest.link;
         }
     };
 
     let updateBuyer = null;
+    let link = null;
     let error = '';
 
     try {
         updateBuyer = await updateBuyerData();
+        try {
+            link = await addNewLink(updateBuyer);
+        } catch (er) {
+            error = error + er;
+        }
     } catch (e) {
-        error = e;
+        error = error + e;
     }
 
-    if (updateBuyer == null) {
+    if (link == null) {
         response.statusCode = 400;
         response.body = `${error.name}: ${error.msg}. ${error.problems}`;
 
     } else {
         response.statusCode = 200;
-        response.body = JSON.stringify(event);
+        response.body = JSON.stringify({'link': link});
     }
 
     console.log(response);
     return response;
 };
-
-
-// @TODO: We need to generate link and save it in DB somehow. And error handling.
-// @TODO: Add a field to buyers with json {'project': 'link'}
