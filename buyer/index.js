@@ -69,6 +69,7 @@ exports.handler = async (event) => {
         } else {
             updateCollectionItemRequest = await webflowAPI.setCollectionItem(buyersCollectionId, {
                 'name': dataFromRequest.name,
+                'slug': `${dataFromRequest.name}_${Math.round(Math.random() * 10000000).toString()}`,
                 '_archived': false,
                 '_draft': false,
                 'phone-number': dataFromRequest.Phone,
