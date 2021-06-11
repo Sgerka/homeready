@@ -106,7 +106,7 @@ exports.handler = async (event) => {
                 'buyer': data.buyerId,
                 'seller': data.sellerId,
                 'project': data.projectId,
-                'link': `http://homeready.co.il/${data.projectSlug}/?p=${generateLink}`
+                'link': `http://homeready.co.il/project/${data.projectSlug}/?p=${generateLink}`
             });
 
             return updateCollectionItemRequest.link;
