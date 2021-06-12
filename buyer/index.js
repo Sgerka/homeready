@@ -12,10 +12,6 @@ exports.handler = async (event) => {
     };
 
     let dataFromRequest = JSON.parse(event.body);
-    if (dataFromRequest.name) {
-        dataFromRequest.name = dataFromRequest.name.replace(' ', '_');
-    }
-
     let updateBuyerData = async () => {
         let buyersCollectionId, sellersCollectionId, projectsCollectionId, buyersItems, sellersItems, projectsItems;
         let buyerData = {};
