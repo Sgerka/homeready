@@ -1,6 +1,5 @@
 const stage = 'prod';
 const trackingURL = 'https://cp422o1834.execute-api.us-east-1.amazonaws.com/test/tracking';
-const storakeKey = 'hrs';
 
 const sendTrackingData = async (data) => {
     switch (stage) {
@@ -8,9 +7,7 @@ const sendTrackingData = async (data) => {
             console.log(data);
             break;
         case 'prod':
-            let response = await apiGatewayRequest(data);
-            console.log(response);
-            break;
+            return await apiGatewayRequest(data);
         default:
             break;
     }
@@ -19,35 +16,31 @@ const sendTrackingData = async (data) => {
 
 
 const apiGatewayRequest = async (data) => {
-    return await fetch(`${trackingURL}\?` + new URLSearchParams(data));
-};
-
-const setCookie = (name, value) => {
-    let date = new Date();
-    // date.setTime(date.getTime() + 3600000);
-    date.setTime(date.getTime());
-    let path = document.location.pathname;
-    let expires = date.toUTCString();
-    document.cookie = `${name}=${value}; path=${path}; Expires=${expires}`;
+    let response = await fetch(`${trackingURL}\?` + new URLSearchParams(data));
+    let json = await response.json();
+    return json;
 };
 
 window.onload = async () => {
     let value = document.location.search;
     if (value !== '') {
-        if (!sessionStorage.getItem(storakeKey)) {
+        if (!sessionStorage.getItem(value)) {
             value = value.replace('?p=', '');
-            sessionStorage.setItem(storakeKey, value);
-            await sendTrackingData({
+            let responseFromAPI = await sendTrackingData({
                 type: 'session',
                 link: value
             });
+            if (responseFromAPI && responseFromAPI['_id']) {
+                sessionStorage.setItem(value, responseFromAPI['_id']);
+            }
         }
 
         setInterval(async () => {
             if (document.hasFocus()) {
                 await sendTrackingData({
                     type: 'update_session',
-                    link: value
+                    link: value,
+                    session_id: sessionStorage.getItem(value)
                 });
             }
         }, 60000);
