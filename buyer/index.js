@@ -28,11 +28,13 @@ exports.handler = async (event) => {
         });
 
 
-        let projectToAdd = projectsItems.items.filter(item => item.slug.includes(dataFromRequest.Project))[0]._id;
+        let projectToAddObject = projectsItems.items.filter(item => item.slug.includes(dataFromRequest.Project))[0];
+        let projectToAdd = projectToAddObject._id;
         let projectToAddSlug = dataFromRequest.Project;
         let sellerToAdd = sellersItems.items.filter(item => item.slug.includes(dataFromRequest.seller))[0]._id;
         let existingBuyerOfThisSeller = buyersItems.items.filter(item => item['phone-number'] === dataFromRequest.Phone && item['sellers2'] === sellerToAdd)[0];
         let updateCollectionItemRequest = null;
+        let totalBuyersOfThisProject = projectToAddObject['total-buyers'] === undefined ? 0 : projectToAddObject['total-buyers'];
 
         if (existingBuyerOfThisSeller) {
             if (!existingBuyerOfThisSeller.projects.includes(projectToAdd)) {
@@ -47,6 +49,10 @@ exports.handler = async (event) => {
                     'phone-number': dataFromRequest.Phone,
                     'projects': projectToAdd,
                     'sellers2': sellerToAdd
+                });
+
+                await webflowAPI.patchCollectionItem(projectsCollectionId, projectToAdd, {
+                    'total-buyers': totalBuyersOfThisProject + 1
                 });
 
                 buyerData = {
@@ -75,6 +81,11 @@ exports.handler = async (event) => {
                 'projects': [projectToAdd],
                 'sellers2': sellerToAdd
             });
+
+            await webflowAPI.patchCollectionItem(projectsCollectionId, projectToAdd, {
+                'total-buyers': totalBuyersOfThisProject + 1
+            });
+
             buyerData = {
                 'buyerId': updateCollectionItemRequest._id,
                 'sellerId': updateCollectionItemRequest.sellers2,

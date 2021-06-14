@@ -38,6 +38,15 @@ module.exports = {
             fields: fields
         }, {live: true});
         return updatedItem;
+    },
+
+    patchCollectionItem: async (collectionId, itemId, fields) => {
+        const patchedItem = await webflowClient.patchItem({
+            collectionId: collectionId,
+            itemId: itemId,
+            fields: fields
+        }, {live: true});
+        return patchedItem;
     }
 
 };
