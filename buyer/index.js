@@ -51,7 +51,7 @@ exports.handler = async (event) => {
                     'sellers2': sellerToAdd
                 });
 
-                await webflowAPI.patchCollectionItem(projectsCollectionId, projectToAdd, {
+                await webflowAPI.patchCollectionItem(projectsCollectionId, newProject, {
                     'total-buyers': totalBuyersOfThisProject + 1
                 });
 
