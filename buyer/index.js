@@ -72,15 +72,20 @@ exports.handler = async (event) => {
             }
 
         } else {
-            updateCollectionItemRequest = await webflowAPI.setCollectionItem(buyersCollectionId, {
-                'name': dataFromRequest.name,
-                'slug': dataFromRequest.Phone.toString(),
-                '_archived': false,
-                '_draft': false,
-                'phone-number': dataFromRequest.Phone,
-                'projects': [projectToAdd],
-                'sellers2': sellerToAdd
-            });
+            try {
+                updateCollectionItemRequest = await webflowAPI.setCollectionItem(buyersCollectionId, {
+                    'name': dataFromRequest.name,
+                    'slug': dataFromRequest.Phone.toString(),
+                    '_archived': false,
+                    '_draft': false,
+                    'phone-number': dataFromRequest.Phone,
+                    'projects': [projectToAdd],
+                    'sellers2': sellerToAdd
+                });
+            } catch (e) {
+                throw e;
+            }
+
 
             await webflowAPI.patchCollectionItem(projectsCollectionId, projectToAdd, {
                 'total-buyers': totalBuyersOfThisProject + 1
@@ -122,22 +127,28 @@ exports.handler = async (event) => {
 
     let updateBuyer = null;
     let link = null;
-    let error = '';
 
     try {
-        try {
-            updateBuyer = await updateBuyerData();
-            link = await addNewLink(updateBuyer);
-        } catch (er) {
-            error = error + er;
-        }
+        updateBuyer = await updateBuyerData();
     } catch (e) {
-        error = error + e;
+        response.statusCode = 400;
+        response.body = JSON.stringify(e);
+        console.log(response);
+        return response;
+    }
+
+    try {
+        link = await addNewLink(updateBuyer);
+    } catch (e) {
+        response.statusCode = 400;
+        response.body = JSON.stringify(e);
+        console.log(response);
+        return response;
     }
 
     if (link == null) {
         response.statusCode = 400;
-        response.body = `${error.name}: ${error.msg}. ${error.problems}`;
+        response.body = `Ooops`;
 
     } else {
         response.statusCode = 200;
