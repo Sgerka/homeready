@@ -41,8 +41,20 @@ for children in svg.get('children'):
                         m['t'] = 'wall'
                         m['l'] = start_point
                         m['w'] = w
-                        # m['h'] = 2.75
+                        m['h'] = 2.75
                         m['map'] = [{'l': lenth, 'c': angle}]
+                        map.append(m)
+            if children.get('attributes').get('id') == 'Windows':
+                windows = children.get('children')
+                for window in windows:
+                    if window.get('name') == 'line':
+                        atr = window.get('attributes')
+                        x1, x2, y1, y2 = float(atr.get('x1')), float(atr.get('x2')), float(atr.get('y1')), float(
+                            atr.get('y2'))
+                        start_point = [min(x1, x2), min(y1, y2)]
+                        m = {}
+                        m['t'] = 'window'
+                        m['l'] = start_point
                         map.append(m)
 print(map)
 
